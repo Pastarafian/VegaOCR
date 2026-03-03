@@ -6,7 +6,7 @@ easyocr>=1.7.1
 pytesseract>=0.3.10
 
 # Image processing & ML
-opencv-python-headless>=4.9.0
+opencv-contrib-python>=4.9.0
 numpy>=1.24.0
 Pillow>=10.0.0
 scikit-image>=0.22.0
