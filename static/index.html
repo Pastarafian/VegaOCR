@@ -1,0 +1,1421 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="VegaOCR — Multi-engine ML-powered OCR with drag-and-drop file processing, bounding box visualization, and ensemble accuracy."
+    />
+    <title>VegaOCR — ML-Powered OCR</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* ─── Design Tokens ───────────────────────────────────────────── */
+      :root {
+        --bg-primary: #0a0e17;
+        --bg-secondary: #111827;
+        --bg-card: #1a2236;
+        --bg-card-hover: #1f2a42;
+        --bg-glass: rgba(26, 34, 54, 0.75);
+        --bg-glass-strong: rgba(26, 34, 54, 0.92);
+        --border-subtle: rgba(99, 128, 255, 0.12);
+        --border-active: rgba(99, 128, 255, 0.35);
+        --text-primary: #e8ecf4;
+        --text-secondary: #8b95ad;
+        --text-muted: #5a6478;
+        --accent-violet: #7c5cfc;
+        --accent-violet-glow: rgba(124, 92, 252, 0.35);
+        --accent-blue: #3b82f6;
+        --accent-cyan: #22d3ee;
+        --accent-emerald: #34d399;
+        --accent-amber: #fbbf24;
+        --accent-rose: #f43f5e;
+        --gradient-primary: linear-gradient(
+          135deg,
+          #7c5cfc 0%,
+          #3b82f6 50%,
+          #22d3ee 100%
+        );
+        --gradient-card: linear-gradient(
+          145deg,
+          rgba(124, 92, 252, 0.08),
+          rgba(59, 130, 246, 0.04)
+        );
+        --shadow-glow: 0 0 40px rgba(124, 92, 252, 0.15);
+        --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.3);
+        --shadow-elevated: 0 8px 40px rgba(0, 0, 0, 0.5);
+        --radius-sm: 8px;
+        --radius-md: 12px;
+        --radius-lg: 16px;
+        --radius-xl: 24px;
+        --font-sans: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+        --font-mono: "JetBrains Mono", "Cascadia Code", monospace;
+        --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+        --transition-smooth: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+        --transition-spring: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
+
+      /* ─── Reset & Base ────────────────────────────────────────────── */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: var(--font-sans);
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        min-height: 100vh;
+        overflow-x: hidden;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* Ambient background glow */
+      body::before {
+        content: "";
+        position: fixed;
+        top: -30%;
+        left: -10%;
+        width: 70%;
+        height: 70%;
+        background: radial-gradient(
+          ellipse,
+          rgba(124, 92, 252, 0.06) 0%,
+          transparent 70%
+        );
+        pointer-events: none;
+        z-index: 0;
+      }
+      body::after {
+        content: "";
+        position: fixed;
+        bottom: -30%;
+        right: -10%;
+        width: 60%;
+        height: 60%;
+        background: radial-gradient(
+          ellipse,
+          rgba(34, 211, 238, 0.04) 0%,
+          transparent 70%
+        );
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      /* ─── Layout ──────────────────────────────────────────────────── */
+      .app-container {
+        position: relative;
+        z-index: 1;
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 24px 32px 60px;
+      }
+
+      /* ─── Header ─────────────────────────────────────────────────── */
+      .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 20px 0 32px;
+      }
+
+      .logo-group {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+
+      .logo-icon {
+        width: 48px;
+        height: 48px;
+        background: var(--gradient-primary);
+        border-radius: var(--radius-md);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        font-weight: 800;
+        color: white;
+        box-shadow: var(--shadow-glow);
+        animation: logoPulse 3s ease-in-out infinite;
+      }
+
+      @keyframes logoPulse {
+        0%,
+        100% {
+          box-shadow: 0 0 20px rgba(124, 92, 252, 0.2);
+        }
+        50% {
+          box-shadow: 0 0 40px rgba(124, 92, 252, 0.4);
+        }
+      }
+
+      .logo-text h1 {
+        font-size: 26px;
+        font-weight: 800;
+        background: var(--gradient-primary);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        letter-spacing: -0.5px;
+      }
+
+      .logo-text p {
+        font-size: 12px;
+        color: var(--text-muted);
+        font-weight: 500;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        margin-top: 2px;
+      }
+
+      .header-badge {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        background: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: 999px;
+        font-size: 12px;
+        color: var(--text-secondary);
+        font-weight: 500;
+      }
+
+      .header-badge .dot {
+        width: 8px;
+        height: 8px;
+        background: var(--accent-emerald);
+        border-radius: 50%;
+        animation: dotBlink 2s ease-in-out infinite;
+      }
+
+      @keyframes dotBlink {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.4;
+        }
+      }
+
+      /* ─── Controls Bar ────────────────────────────────────────────── */
+      .controls-bar {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 16px 24px;
+        background: var(--bg-glass);
+        backdrop-filter: blur(20px);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-lg);
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+      }
+
+      .control-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .control-group label {
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1.2px;
+        color: var(--text-muted);
+      }
+
+      .control-group select,
+      .control-group input {
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-sm);
+        padding: 8px 14px;
+        font-size: 13px;
+        font-family: var(--font-sans);
+        font-weight: 500;
+        outline: none;
+        cursor: pointer;
+        transition: border-color var(--transition-fast);
+        min-width: 160px;
+      }
+
+      .control-group select:focus,
+      .control-group input:focus {
+        border-color: var(--accent-violet);
+      }
+
+      .control-group select option {
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+      }
+
+      .controls-spacer {
+        flex: 1;
+      }
+
+      .btn-process {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 28px;
+        background: var(--gradient-primary);
+        color: white;
+        border: none;
+        border-radius: var(--radius-sm);
+        font-size: 14px;
+        font-weight: 600;
+        font-family: var(--font-sans);
+        cursor: pointer;
+        transition: all var(--transition-smooth);
+        box-shadow: 0 4px 16px rgba(124, 92, 252, 0.3);
+      }
+
+      .btn-process:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 24px rgba(124, 92, 252, 0.45);
+      }
+
+      .btn-process:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .btn-process .spinner {
+        display: none;
+        width: 16px;
+        height: 16px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-top-color: white;
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+      }
+
+      .btn-process.loading .spinner {
+        display: block;
+      }
+      .btn-process.loading .btn-text {
+        display: none;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* ─── Main Grid ───────────────────────────────────────────────── */
+      .main-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+        min-height: 500px;
+      }
+
+      @media (max-width: 900px) {
+        .main-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* ─── Drop Zone ───────────────────────────────────────────────── */
+      .drop-panel {
+        background: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        box-shadow: var(--shadow-card);
+        transition: border-color var(--transition-smooth);
+      }
+
+      .panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 20px;
+        border-bottom: 1px solid var(--border-subtle);
+        background: var(--gradient-card);
+      }
+
+      .panel-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .panel-title .icon {
+        font-size: 16px;
+      }
+
+      .drop-zone {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 48px 32px;
+        cursor: pointer;
+        transition: all var(--transition-smooth);
+        position: relative;
+        min-height: 400px;
+      }
+
+      .drop-zone.dragover {
+        background: rgba(124, 92, 252, 0.06);
+      }
+
+      .drop-zone.dragover .drop-border {
+        border-color: var(--accent-violet);
+        background: rgba(124, 92, 252, 0.04);
+      }
+
+      .drop-border {
+        position: absolute;
+        inset: 16px;
+        border: 2px dashed var(--border-active);
+        border-radius: var(--radius-md);
+        pointer-events: none;
+        transition: all var(--transition-smooth);
+      }
+
+      .drop-content {
+        text-align: center;
+        position: relative;
+        z-index: 1;
+      }
+
+      .drop-icon {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 20px;
+        background: var(--gradient-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-xl);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 36px;
+        transition: transform var(--transition-spring);
+      }
+
+      .drop-zone:hover .drop-icon,
+      .drop-zone.dragover .drop-icon {
+        transform: scale(1.08) translateY(-4px);
+      }
+
+      .drop-content h3 {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+      }
+
+      .drop-content p {
+        font-size: 13px;
+        color: var(--text-muted);
+        line-height: 1.6;
+      }
+
+      .drop-content .file-types {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        margin-top: 16px;
+        flex-wrap: wrap;
+      }
+
+      .file-tag {
+        padding: 3px 10px;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-subtle);
+        border-radius: 999px;
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      #fileInput {
+        display: none;
+      }
+
+      /* ─── Image Preview ───────────────────────────────────────────── */
+      .preview-container {
+        display: none;
+        flex-direction: column;
+        width: 100%;
+        height: 100%;
+      }
+
+      .preview-container.active {
+        display: flex;
+      }
+
+      .preview-image-wrap {
+        flex: 1;
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        background: repeating-conic-gradient(
+            rgba(255, 255, 255, 0.02) 0% 25%,
+            transparent 0% 50%
+          )
+          50% / 20px 20px;
+      }
+
+      .preview-image-wrap img {
+        max-width: 100%;
+        max-height: 450px;
+        object-fit: contain;
+        border-radius: var(--radius-sm);
+      }
+
+      .preview-image-wrap canvas {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        pointer-events: none;
+      }
+
+      .preview-info {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 20px;
+        border-top: 1px solid var(--border-subtle);
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+
+      .btn-clear {
+        padding: 5px 14px;
+        background: transparent;
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-sm);
+        color: var(--text-secondary);
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+        font-family: var(--font-sans);
+        transition: all var(--transition-fast);
+      }
+      .btn-clear:hover {
+        border-color: var(--accent-rose);
+        color: var(--accent-rose);
+      }
+
+      /* ─── Results Panel ───────────────────────────────────────────── */
+      .results-panel {
+        background: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        box-shadow: var(--shadow-card);
+      }
+
+      .results-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 0;
+      }
+
+      /* Empty state */
+      .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        min-height: 400px;
+        padding: 48px;
+        text-align: center;
+        color: var(--text-muted);
+      }
+
+      .empty-state .icon {
+        font-size: 48px;
+        margin-bottom: 16px;
+        opacity: 0.4;
+      }
+
+      .empty-state h3 {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin-bottom: 6px;
+      }
+
+      .empty-state p {
+        font-size: 13px;
+        line-height: 1.6;
+      }
+
+      /* Results tabs */
+      .results-tabs {
+        display: flex;
+        gap: 0;
+        border-bottom: 1px solid var(--border-subtle);
+      }
+
+      .results-tab {
+        padding: 10px 20px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-muted);
+        cursor: pointer;
+        transition: all var(--transition-fast);
+        border-bottom: 2px solid transparent;
+        background: none;
+        border-top: none;
+        border-left: none;
+        border-right: none;
+        font-family: var(--font-sans);
+      }
+
+      .results-tab:hover {
+        color: var(--text-secondary);
+      }
+      .results-tab.active {
+        color: var(--accent-violet);
+        border-bottom-color: var(--accent-violet);
+      }
+
+      .tab-content {
+        display: none;
+        padding: 20px;
+      }
+      .tab-content.active {
+        display: block;
+      }
+
+      /* Text output */
+      .text-output {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-sm);
+        padding: 16px;
+        font-family: var(--font-mono);
+        font-size: 13px;
+        line-height: 1.8;
+        color: var(--text-primary);
+        white-space: pre-wrap;
+        word-break: break-word;
+        max-height: 400px;
+        overflow-y: auto;
+        min-height: 100px;
+      }
+
+      .copy-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        background: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-sm);
+        color: var(--text-secondary);
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+        font-family: var(--font-sans);
+        transition: all var(--transition-fast);
+        margin-bottom: 10px;
+      }
+      .copy-btn:hover {
+        border-color: var(--accent-violet);
+        color: var(--accent-violet);
+      }
+      .copy-btn.copied {
+        border-color: var(--accent-emerald);
+        color: var(--accent-emerald);
+      }
+
+      /* Detections table */
+      .detections-list {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        max-height: 440px;
+        overflow-y: auto;
+      }
+
+      .detection-item {
+        display: grid;
+        grid-template-columns: 1fr auto auto;
+        gap: 12px;
+        align-items: center;
+        padding: 10px 14px;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-sm);
+        font-size: 13px;
+        transition: border-color var(--transition-fast);
+      }
+
+      .detection-item:hover {
+        border-color: var(--border-active);
+      }
+
+      .detection-text {
+        font-family: var(--font-mono);
+        font-weight: 500;
+        color: var(--text-primary);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .detection-confidence {
+        font-size: 11px;
+        font-weight: 700;
+        padding: 3px 10px;
+        border-radius: 999px;
+        white-space: nowrap;
+      }
+
+      .conf-high {
+        background: rgba(52, 211, 153, 0.12);
+        color: var(--accent-emerald);
+      }
+      .conf-medium {
+        background: rgba(251, 191, 36, 0.12);
+        color: var(--accent-amber);
+      }
+      .conf-low {
+        background: rgba(244, 63, 94, 0.12);
+        color: var(--accent-rose);
+      }
+
+      .detection-engine {
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      /* Stats bar */
+      .stats-bar {
+        display: flex;
+        gap: 20px;
+        padding: 16px 20px;
+        border-top: 1px solid var(--border-subtle);
+        background: var(--gradient-card);
+        flex-wrap: wrap;
+      }
+
+      .stat-item {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .stat-label {
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      .stat-value {
+        font-size: 16px;
+        font-weight: 700;
+        font-family: var(--font-mono);
+      }
+
+      .stat-value.accent {
+        color: var(--accent-violet);
+      }
+      .stat-value.emerald {
+        color: var(--accent-emerald);
+      }
+      .stat-value.cyan {
+        color: var(--accent-cyan);
+      }
+      .stat-value.amber {
+        color: var(--accent-amber);
+      }
+
+      /* ─── Scrollbar ───────────────────────────────────────────────── */
+      ::-webkit-scrollbar {
+        width: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: rgba(124, 92, 252, 0.2);
+        border-radius: 3px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: rgba(124, 92, 252, 0.4);
+      }
+
+      /* ─── Toast Notification ──────────────────────────────────────── */
+      .toast {
+        position: fixed;
+        bottom: 32px;
+        right: 32px;
+        padding: 14px 24px;
+        background: var(--bg-glass-strong);
+        backdrop-filter: blur(20px);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-md);
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text-primary);
+        box-shadow: var(--shadow-elevated);
+        z-index: 1000;
+        transform: translateY(20px);
+        opacity: 0;
+        transition: all var(--transition-smooth);
+        pointer-events: none;
+      }
+
+      .toast.visible {
+        transform: translateY(0);
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .toast.error {
+        border-color: rgba(244, 63, 94, 0.3);
+      }
+      .toast.success {
+        border-color: rgba(52, 211, 153, 0.3);
+      }
+
+      /* ─── Animations ──────────────────────────────────────────────── */
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .animate-in {
+        animation: fadeInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+      }
+
+      .delay-1 {
+        animation-delay: 0.1s;
+      }
+      .delay-2 {
+        animation-delay: 0.2s;
+      }
+      .delay-3 {
+        animation-delay: 0.3s;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-container">
+      <!-- Header -->
+      <header class="header animate-in">
+        <div class="logo-group">
+          <div class="logo-icon">V</div>
+          <div class="logo-text">
+            <h1>VegaOCR</h1>
+            <p>ML-Powered Text Recognition</p>
+          </div>
+        </div>
+        <div class="header-badge">
+          <span class="dot"></span>
+          <span id="statusText">Ready</span>
+        </div>
+      </header>
+
+      <!-- Controls -->
+      <div class="controls-bar animate-in delay-1">
+        <div class="control-group">
+          <label for="engineSelect">Engine</label>
+          <select id="engineSelect">
+            <option value="ensemble" selected>
+              🧠 Ensemble (Best Accuracy)
+            </option>
+            <option value="paddle">⚡ PaddleOCR (Deep Learning)</option>
+            <option value="easy">🌐 EasyOCR (Multilingual)</option>
+            <option value="tesseract">📄 Tesseract (Fast Baseline)</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label for="langSelect">Language</label>
+          <select id="langSelect">
+            <option value="en" selected>English</option>
+            <option value="ch">Chinese</option>
+            <option value="ja">Japanese</option>
+            <option value="ko">Korean</option>
+            <option value="fr">French</option>
+            <option value="de">German</option>
+            <option value="es">Spanish</option>
+            <option value="pt">Portuguese</option>
+            <option value="ar">Arabic</option>
+            <option value="hi">Hindi</option>
+            <option value="ru">Russian</option>
+          </select>
+        </div>
+        <div class="controls-spacer"></div>
+        <button class="btn-process" id="processBtn" disabled>
+          <span class="spinner"></span>
+          <span class="btn-text">⚡ Process OCR</span>
+        </button>
+      </div>
+
+      <!-- Main Grid -->
+      <div class="main-grid animate-in delay-2">
+        <!-- Left: Drop Zone / Preview -->
+        <div class="drop-panel" id="dropPanel">
+          <div class="panel-header">
+            <span class="panel-title"
+              ><span class="icon">📷</span> Input Image</span
+            >
+            <span
+              id="fileNameDisplay"
+              style="font-size: 12px; color: var(--text-muted)"
+            ></span>
+          </div>
+
+          <div class="drop-zone" id="dropZone">
+            <div class="drop-border"></div>
+            <div class="drop-content" id="dropContent">
+              <div class="drop-icon">📁</div>
+              <h3>Drop files here</h3>
+              <p>or click to browse your files</p>
+              <div class="file-types">
+                <span class="file-tag">PNG</span>
+                <span class="file-tag">JPG</span>
+                <span class="file-tag">TIFF</span>
+                <span class="file-tag">BMP</span>
+                <span class="file-tag">WebP</span>
+                <span class="file-tag">PDF</span>
+              </div>
+            </div>
+            <div class="preview-container" id="previewContainer">
+              <div class="preview-image-wrap">
+                <img id="previewImage" src="" alt="Preview" />
+                <canvas id="bboxCanvas"></canvas>
+              </div>
+            </div>
+          </div>
+          <div class="preview-info" id="previewInfo" style="display: none">
+            <span id="fileSizeDisplay"></span>
+            <button class="btn-clear" id="clearBtn">✕ Clear</button>
+          </div>
+          <input
+            type="file"
+            id="fileInput"
+            accept=".png,.jpg,.jpeg,.bmp,.tiff,.tif,.webp,.gif,.pdf"
+          />
+        </div>
+
+        <!-- Right: Results -->
+        <div class="results-panel" id="resultsPanel">
+          <div class="panel-header">
+            <span class="panel-title"
+              ><span class="icon">📊</span> Results</span
+            >
+            <span
+              id="detectionCount"
+              style="font-size: 12px; color: var(--text-muted)"
+            ></span>
+          </div>
+
+          <div class="results-body" id="resultsBody">
+            <!-- Empty state -->
+            <div class="empty-state" id="emptyState">
+              <div class="icon">🔍</div>
+              <h3>No results yet</h3>
+              <p>Drop an image and click Process to extract text</p>
+            </div>
+
+            <!-- Results content (hidden until OCR runs) -->
+            <div id="resultsContent" style="display: none">
+              <div class="results-tabs">
+                <button class="results-tab active" data-tab="text">
+                  Extracted Text
+                </button>
+                <button class="results-tab" data-tab="detections">
+                  Detections
+                </button>
+                <button class="results-tab" data-tab="json">Raw JSON</button>
+              </div>
+
+              <div class="tab-content active" id="tab-text">
+                <button class="copy-btn" id="copyTextBtn">📋 Copy Text</button>
+                <div class="text-output" id="textOutput"></div>
+              </div>
+
+              <div class="tab-content" id="tab-detections">
+                <div class="detections-list" id="detectionsList"></div>
+              </div>
+
+              <div class="tab-content" id="tab-json">
+                <button class="copy-btn" id="copyJsonBtn">📋 Copy JSON</button>
+                <div
+                  class="text-output"
+                  id="jsonOutput"
+                  style="font-size: 11px"
+                ></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="stats-bar" id="statsBar" style="display: none">
+            <div class="stat-item">
+              <span class="stat-label">Detections</span>
+              <span class="stat-value accent" id="statDetections">0</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Avg Confidence</span>
+              <span class="stat-value emerald" id="statConfidence">0%</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Processing</span>
+              <span class="stat-value cyan" id="statTime">0ms</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Engine</span>
+              <span class="stat-value amber" id="statEngine">—</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+      (function () {
+        "use strict";
+
+        // ─── DOM References ──────────────────────────────────────────
+        const dropZone = document.getElementById("dropZone");
+        const dropContent = document.getElementById("dropContent");
+        const dropPanel = document.getElementById("dropPanel");
+        const fileInput = document.getElementById("fileInput");
+        const previewContainer = document.getElementById("previewContainer");
+        const previewImage = document.getElementById("previewImage");
+        const previewInfo = document.getElementById("previewInfo");
+        const bboxCanvas = document.getElementById("bboxCanvas");
+        const processBtn = document.getElementById("processBtn");
+        const clearBtn = document.getElementById("clearBtn");
+        const engineSelect = document.getElementById("engineSelect");
+        const langSelect = document.getElementById("langSelect");
+        const statusText = document.getElementById("statusText");
+        const fileNameEl = document.getElementById("fileNameDisplay");
+        const fileSizeEl = document.getElementById("fileSizeDisplay");
+        const emptyState = document.getElementById("emptyState");
+        const resultsContent = document.getElementById("resultsContent");
+        const statsBar = document.getElementById("statsBar");
+        const textOutput = document.getElementById("textOutput");
+        const jsonOutput = document.getElementById("jsonOutput");
+        const detectionsList = document.getElementById("detectionsList");
+        const detCountEl = document.getElementById("detectionCount");
+        const toast = document.getElementById("toast");
+
+        let currentFile = null;
+        let currentResult = null;
+
+        // ─── Drag & Drop ─────────────────────────────────────────────
+        ["dragenter", "dragover"].forEach((evt) => {
+          dropZone.addEventListener(evt, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.classList.add("dragover");
+          });
+        });
+
+        ["dragleave", "drop"].forEach((evt) => {
+          dropZone.addEventListener(evt, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.classList.remove("dragover");
+          });
+        });
+
+        dropZone.addEventListener("drop", (e) => {
+          const files = e.dataTransfer.files;
+          if (files.length > 0) handleFile(files[0]);
+        });
+
+        dropZone.addEventListener("click", (e) => {
+          if (e.target.closest(".preview-container")) return;
+          fileInput.click();
+        });
+
+        fileInput.addEventListener("change", () => {
+          if (fileInput.files.length > 0) handleFile(fileInput.files[0]);
+        });
+
+        clearBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          resetAll();
+        });
+
+        // ─── File Handling ───────────────────────────────────────────
+        function handleFile(file) {
+          const ext = "." + file.name.split(".").pop().toLowerCase();
+          const allowed = [
+            ".png",
+            ".jpg",
+            ".jpeg",
+            ".bmp",
+            ".tiff",
+            ".tif",
+            ".webp",
+            ".gif",
+            ".pdf",
+          ];
+
+          if (!allowed.includes(ext)) {
+            showToast("Unsupported file type: " + ext, "error");
+            return;
+          }
+
+          currentFile = file;
+          fileNameEl.textContent = file.name;
+          fileSizeEl.textContent = formatSize(file.size);
+          processBtn.disabled = false;
+
+          if (ext === ".pdf") {
+            // Show PDF icon instead of preview
+            previewImage.src = "";
+            previewImage.alt = "PDF Document: " + file.name;
+            dropContent.style.display = "none";
+            previewContainer.classList.add("active");
+            previewInfo.style.display = "flex";
+
+            // Show a PDF indicator
+            const wrap = previewContainer.querySelector(".preview-image-wrap");
+            let pdfIndicator = wrap.querySelector(".pdf-indicator");
+            if (!pdfIndicator) {
+              pdfIndicator = document.createElement("div");
+              pdfIndicator.className = "pdf-indicator";
+              pdfIndicator.style.cssText = `
+                        display: flex; flex-direction: column; align-items: center;
+                        gap: 12px; color: var(--text-secondary);
+                    `;
+              pdfIndicator.innerHTML = `
+                        <div style="font-size: 64px;">📄</div>
+                        <div style="font-size: 14px; font-weight: 600;">${file.name}</div>
+                        <div style="font-size: 12px; color: var(--text-muted);">${formatSize(file.size)}</div>
+                    `;
+              wrap.appendChild(pdfIndicator);
+            }
+            previewImage.style.display = "none";
+          } else {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              previewImage.src = e.target.result;
+              previewImage.style.display = "";
+              dropContent.style.display = "none";
+              previewContainer.classList.add("active");
+              previewInfo.style.display = "flex";
+
+              // Remove PDF indicator if any
+              const pi = previewContainer.querySelector(".pdf-indicator");
+              if (pi) pi.remove();
+            };
+            reader.readAsDataURL(file);
+          }
+        }
+
+        // ─── Process OCR ─────────────────────────────────────────────
+        processBtn.addEventListener("click", runOCR);
+
+        async function runOCR() {
+          if (!currentFile) return;
+
+          processBtn.classList.add("loading");
+          processBtn.disabled = true;
+          statusText.textContent = "Processing...";
+
+          const formData = new FormData();
+          formData.append("file", currentFile);
+          formData.append("engine", engineSelect.value);
+          formData.append("lang", langSelect.value);
+
+          try {
+            const resp = await fetch("/api/ocr", {
+              method: "POST",
+              body: formData,
+            });
+
+            if (!resp.ok) {
+              const err = await resp
+                .json()
+                .catch(() => ({ detail: "Unknown error" }));
+              throw new Error(err.detail || `HTTP ${resp.status}`);
+            }
+
+            currentResult = await resp.json();
+            renderResults(currentResult);
+            statusText.textContent = "Complete";
+            showToast(
+              `✅ Extracted ${currentResult.detections.length} text regions`,
+              "success",
+            );
+
+            // Draw bounding boxes
+            if (previewImage.src && previewImage.naturalWidth) {
+              drawBoundingBoxes(currentResult.detections);
+            }
+          } catch (err) {
+            statusText.textContent = "Error";
+            showToast("❌ " + err.message, "error");
+          } finally {
+            processBtn.classList.remove("loading");
+            processBtn.disabled = false;
+          }
+        }
+
+        // ─── Render Results ──────────────────────────────────────────
+        function renderResults(data) {
+          emptyState.style.display = "none";
+          resultsContent.style.display = "";
+          statsBar.style.display = "flex";
+
+          // Text
+          textOutput.textContent = data.full_text || "(No text detected)";
+
+          // Detections list
+          detectionsList.innerHTML = "";
+          data.detections.forEach((det) => {
+            const confPct = (det.confidence * 100).toFixed(1);
+            const confClass =
+              det.confidence >= 0.85
+                ? "conf-high"
+                : det.confidence >= 0.6
+                  ? "conf-medium"
+                  : "conf-low";
+
+            const item = document.createElement("div");
+            item.className = "detection-item";
+            item.innerHTML = `
+                    <span class="detection-text" title="${escapeHtml(det.text)}">${escapeHtml(det.text)}</span>
+                    <span class="detection-confidence ${confClass}">${confPct}%</span>
+                    <span class="detection-engine">${det.engine}</span>
+                `;
+            detectionsList.appendChild(item);
+          });
+
+          // JSON
+          jsonOutput.textContent = JSON.stringify(data, null, 2);
+
+          // Stats
+          document.getElementById("statDetections").textContent =
+            data.detections.length;
+          const avgConf =
+            data.detections.length > 0
+              ? data.detections.reduce((s, d) => s + d.confidence, 0) /
+                data.detections.length
+              : 0;
+          document.getElementById("statConfidence").textContent =
+            (avgConf * 100).toFixed(1) + "%";
+          document.getElementById("statTime").textContent =
+            data.processing_time_ms.toFixed(0) + "ms";
+          document.getElementById("statEngine").textContent = data.engine_used;
+          detCountEl.textContent = `${data.detections.length} regions`;
+        }
+
+        // ─── Bounding Box Canvas ─────────────────────────────────────
+        function drawBoundingBoxes(detections) {
+          const img = previewImage;
+          if (!img.complete || !img.naturalWidth) return;
+
+          const canvas = bboxCanvas;
+          const displayW = img.clientWidth;
+          const displayH = img.clientHeight;
+          canvas.width = displayW;
+          canvas.height = displayH;
+          canvas.style.width = displayW + "px";
+          canvas.style.height = displayH + "px";
+
+          const scaleX = displayW / img.naturalWidth;
+          const scaleY = displayH / img.naturalHeight;
+
+          const ctx = canvas.getContext("2d");
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+          const colors = [
+            "rgba(124, 92, 252, 0.7)",
+            "rgba(59, 130, 246, 0.7)",
+            "rgba(34, 211, 238, 0.7)",
+            "rgba(52, 211, 153, 0.7)",
+          ];
+
+          detections.forEach((det, i) => {
+            const color = colors[i % colors.length];
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.fillStyle = color.replace("0.7", "0.08");
+
+            const bbox = det.bbox;
+            ctx.beginPath();
+            ctx.moveTo(bbox[0][0] * scaleX, bbox[0][1] * scaleY);
+            for (let j = 1; j < bbox.length; j++) {
+              ctx.lineTo(bbox[j][0] * scaleX, bbox[j][1] * scaleY);
+            }
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Confidence label
+            const confPct = (det.confidence * 100).toFixed(0) + "%";
+            ctx.font = "600 10px Inter, sans-serif";
+            ctx.fillStyle = color.replace("0.7", "0.95");
+            const tx = bbox[0][0] * scaleX;
+            const ty = bbox[0][1] * scaleY - 4;
+            ctx.fillText(confPct, tx, ty > 12 ? ty : ty + 16);
+          });
+        }
+
+        // ─── Tabs ────────────────────────────────────────────────────
+        document.querySelectorAll(".results-tab").forEach((tab) => {
+          tab.addEventListener("click", () => {
+            document
+              .querySelectorAll(".results-tab")
+              .forEach((t) => t.classList.remove("active"));
+            document
+              .querySelectorAll(".tab-content")
+              .forEach((c) => c.classList.remove("active"));
+            tab.classList.add("active");
+            document
+              .getElementById("tab-" + tab.dataset.tab)
+              .classList.add("active");
+          });
+        });
+
+        // ─── Copy Buttons ────────────────────────────────────────────
+        document.getElementById("copyTextBtn").addEventListener("click", () => {
+          copyToClipboard(
+            textOutput.textContent,
+            document.getElementById("copyTextBtn"),
+          );
+        });
+
+        document.getElementById("copyJsonBtn").addEventListener("click", () => {
+          copyToClipboard(
+            jsonOutput.textContent,
+            document.getElementById("copyJsonBtn"),
+          );
+        });
+
+        function copyToClipboard(text, btn) {
+          navigator.clipboard.writeText(text).then(() => {
+            btn.classList.add("copied");
+            btn.innerHTML = "✅ Copied!";
+            setTimeout(() => {
+              btn.classList.remove("copied");
+              btn.innerHTML = "📋 Copy";
+            }, 2000);
+          });
+        }
+
+        // ─── Reset ──────────────────────────────────────────────────
+        function resetAll() {
+          currentFile = null;
+          currentResult = null;
+          fileInput.value = "";
+          previewImage.src = "";
+          previewImage.style.display = "";
+          previewContainer.classList.remove("active");
+          dropContent.style.display = "";
+          previewInfo.style.display = "none";
+          processBtn.disabled = true;
+          fileNameEl.textContent = "";
+          fileSizeEl.textContent = "";
+          statusText.textContent = "Ready";
+          emptyState.style.display = "";
+          resultsContent.style.display = "none";
+          statsBar.style.display = "none";
+          detCountEl.textContent = "";
+
+          // Clear canvas
+          const ctx = bboxCanvas.getContext("2d");
+          ctx.clearRect(0, 0, bboxCanvas.width, bboxCanvas.height);
+
+          // Remove PDF indicator if any
+          const pi = previewContainer.querySelector(".pdf-indicator");
+          if (pi) pi.remove();
+        }
+
+        // ─── Utilities ──────────────────────────────────────────────
+        function formatSize(bytes) {
+          if (bytes < 1024) return bytes + " B";
+          if (bytes < 1048576) return (bytes / 1024).toFixed(1) + " KB";
+          return (bytes / 1048576).toFixed(1) + " MB";
+        }
+
+        function escapeHtml(str) {
+          const div = document.createElement("div");
+          div.textContent = str;
+          return div.innerHTML;
+        }
+
+        let toastTimeout;
+        function showToast(msg, type = "") {
+          toast.textContent = msg;
+          toast.className = "toast " + type + " visible";
+          clearTimeout(toastTimeout);
+          toastTimeout = setTimeout(() => {
+            toast.classList.remove("visible");
+          }, 4000);
+        }
+
+        // ─── Keyboard Shortcut ───────────────────────────────────────
+        document.addEventListener("keydown", (e) => {
+          if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+            e.preventDefault();
+            if (!processBtn.disabled) processBtn.click();
+          }
+          if (e.key === "Escape") resetAll();
+        });
+
+        // ─── Resize handler for bbox canvas ──────────────────────────
+        window.addEventListener("resize", () => {
+          if (currentResult && currentResult.detections) {
+            drawBoundingBoxes(currentResult.detections);
+          }
+        });
+
+        // Also redraw after image loads
+        previewImage.addEventListener("load", () => {
+          if (currentResult && currentResult.detections) {
+            drawBoundingBoxes(currentResult.detections);
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>

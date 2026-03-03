@@ -1,0 +1,35 @@
+# ─── Python ──────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+
+# ─── Virtual Environments ────────────────────────────────────
+venv/
+.venv/
+env/
+
+# ─── IDE ─────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ─── VegaOCR Runtime ─────────────────────────────────────────
+uploads/
+results/
+*.log
+
+# ─── OS ──────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ─── ML Model Caches ────────────────────────────────────────
+.paddleocr/
+~/.EasyOCR/
